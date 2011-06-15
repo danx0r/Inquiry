@@ -44,7 +44,6 @@ def buildRecord(typ, _id, fields, items):
                     item += repr(it)
         items.append(item)
 
-replacements = {u'author':u'NameRaw',u'recipient':u'NameRaw'}
 def application(environ, start_response):
     status = '200 OK'
     if environ['REQUEST_METHOD'].lower()=="post":
@@ -69,19 +68,25 @@ def application(environ, start_response):
     output = """{"status":"ok","result":[{"letterid":"262538","letter":"voltfrVF1180359c_1key001cor","authorid":"48939","author":"NOT FOUND","recipientid":"50510","recipient":"NOT FOUND","source":"","destinationlatlon":"","sourcelatlon":"","destination":"","date":"1769-3-24"}]}"""
     if 'action' in qargs and qargs['action'] == 'query' and 'q' in qargs:
         query = json.loads(qargs['q'])
+        mresp = []
         for k in query:
-            if k in replacements:
-                r = replacements[k]
-                query[r]=query[k]
-                del query[k]
-        mresp = list(mong.Person.find(query).limit(30))
-        print >> sys.stderr, "DEBUG query:", query, "mresp:", mresp
+            if k in ['author', 'recipient']:
+                q = {'NameRaw': query[k]}
+                person = mong.Person.find_one(q)
+                print >> sys.stderr, "DEBUG q:", q, "person:", person
+                if person:
+                    q = {k.capitalize(): person['_id']}
+                    mresp += list(mong.Letter.find(q).limit(3))
+        print >> sys.stderr, "DEBUG query:", query, "\nMRESP:", mresp
         template = {"letterid":"262538","letter":"voltfrVF1180359c_1key001cor","authorid":"48939","author":"UNKNOWN","recipientid":"50510","recipient":"UNKNOWN","source":"","destinationlatlon":"","sourcelatlon":"","destination":"","date":"1769-3-24"}
         if len(mresp):
             resp = []
             for i in range(len(mresp)):
                 resp.append(deepcopy(template))
-                resp[i]['author']=mresp[i]['NameRaw']
+                if 'Author' in mresp[i]:
+                    resp[i]['author']=mong.Person.find_one({'_id':mresp[i]['Author']})['NameRaw']
+                if 'Recipient' in mresp[i]:
+                    resp[i]['recipient']=mong.Person.find_one({'_id':mresp[i]['Recipient']})['NameRaw']
         else:
             resp = [template]
         resp = {"status":"ok","result":resp}
