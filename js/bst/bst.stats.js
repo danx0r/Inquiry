@@ -15,7 +15,7 @@
 			last: null,
 			color: "#28bbc5",
 			/* The api url */
-			url : "./data/api.php" // the api url works actually on data/letters.json
+			url : "./data/api.py" // the api url works actually on data/letters.json
 		}
 		queryRender = {}
 		tableRender = {}
