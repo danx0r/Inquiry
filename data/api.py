@@ -1,4 +1,5 @@
 import sys, os, json
+from copy import deepcopy
 from genshi.template import MarkupTemplate
 DOCROOT = os.path.dirname(__file__)
 sys.path[:0] = [os.path.join(DOCROOT)]
@@ -73,11 +74,16 @@ def application(environ, start_response):
                 r = replacements[k]
                 query[r]=query[k]
                 del query[k]
-        mresp = list(mong.Person.find(query).limit(10))
+        mresp = list(mong.Person.find(query).limit(30))
         print >> sys.stderr, "DEBUG query:", query, "mresp:", mresp
-        resp = [{"letterid":"262538","letter":"voltfrVF1180359c_1key001cor","authorid":"48939","author":"UNKNOWN","recipientid":"50510","recipient":"UNKNOWN","source":"","destinationlatlon":"","sourcelatlon":"","destination":"","date":"1769-3-24"}]
+        template = {"letterid":"262538","letter":"voltfrVF1180359c_1key001cor","authorid":"48939","author":"UNKNOWN","recipientid":"50510","recipient":"UNKNOWN","source":"","destinationlatlon":"","sourcelatlon":"","destination":"","date":"1769-3-24"}
         if len(mresp):
-            resp[0]['author']=mresp[0]['NameRaw'] + "(mongo)"
+            resp = []
+            for i in range(len(mresp)):
+                resp.append(deepcopy(template))
+                resp[i]['author']=mresp[i]['NameRaw']
+        else:
+            resp = [template]
         resp = {"status":"ok","result":resp}
         output = json.dumps(resp)
         print >> sys.stderr, "DEBUG result:", output
